@@ -1,47 +1,42 @@
-﻿using XRO;
+﻿using XRO.Domain;
+using XRO.Rules;
 
-var commands = new Dictionary<int, ClothingCommand>
-{
-    [1] = new("Put on footwear", Responses("sandals", "boots")),
-    [2] = new("Put on headwear", Responses("sunglasses", "hat")),
-    [3] = new("Put on socks", Responses("socks", "socks")),
-    [4] = new("Put on shirt", Responses("shirt", "shirt")),
-    [5] = new("Put on jacket", Responses("jacket", "jacket")),
-    [6] = new("Put on pants", Responses("shorts", "pants")),
-    [7] = new("Leave house", Responses("leaving house", "leaving house")),
-    [8] = new("Take off pajamas", Responses("Removing PJs", "Removing PJs")),
-};
-var rules = new IRule[]{
+var context = new RulesContext(
+    new MapCommandRule(),
+
     new OnePieceOfClothingRule(),
-    new NoClothingWhenHotRule(3),
-    new NoClothingWhenHotRule(5),
-    new PutOnBeforeRule(3, 1),
-    new PutOnBeforeRule(4, 2),
-    new PutOnBeforeRule(4, 5),
-    new PutOnBeforeRule(6, 1),
-    new PJFirstRule(8),
-};
+    new NoClothingWhenHotRule(ClothingType.Socks),
+    new NoClothingWhenHotRule(ClothingType.Jacket),
+    new PutOnBeforeRule(ClothingType.Socks, ClothingType.Footwear),
+    new PutOnBeforeRule(ClothingType.Shirt, ClothingType.Headwear),
+    new PutOnBeforeRule(ClothingType.Shirt, ClothingType.Jacket),
+    new PutOnBeforeRule(ClothingType.Pants, ClothingType.Footwear),
+    new RemovePJFirstRule(),
+    new CannotLeaveHouseWithoutClothingRule(),
+    new MustLeaveHouseRule(),
 
-Console.Write("Input: ");
-var input = Console.ReadLine();
-if (string.IsNullOrEmpty(input))
+    new HaltWhenFailedRule()
+);
+
+while (true)
 {
-    return;
+    Console.Write("Input: ");
+    var input = Console.ReadLine();
+    if (string.IsNullOrEmpty(input))
+    {
+        Console.WriteLine("Input failed");
+        return;
+    }
+
+    var (temperature, commandIds) = Parse(input);
+
+    var responses = ExecuteCommands(context, temperature, commandIds);
+
+    var output = string.Join(", ", responses);
+
+    Console.Write("Output: ");
+    Console.WriteLine(output);
 }
-
-var (temperature, commandIds) = Parse(input);
-
-var context = new RulesContext(commands, rules, temperature);
-var responses = ApplyCommands(context, commandIds).ToArray();
-
-
-var output = string.Join(", ", responses);
-
-Console.Write("Output: ");
-Console.WriteLine(output);
-
-static IReadOnlyDictionary<TemperatureType, string> Responses(string hot, string cold) =>
-    new Dictionary<TemperatureType, string> { [TemperatureType.Hot] = hot, [TemperatureType.Cold] = cold };
 
 static (TemperatureType, IEnumerable<int>) Parse(string input)
 {
@@ -52,22 +47,49 @@ static (TemperatureType, IEnumerable<int>) Parse(string input)
     return (temperature, commands);
 }
 
-static IEnumerable<string> ApplyCommands(RulesContext context, IEnumerable<int> commandIds)
+static IEnumerable<string> ExecuteCommands(RulesContext context, TemperatureType temperature, IEnumerable<int> commandIds)
 {
+    // assumptions
+    context.AddAll(new IFact[] { new InHouseFact(), new WearClothingFact(ClothingType.Pajamas) });
+
+    // user inputs
+    context.Add(new TemperatureFact(temperature));
     foreach (var id in commandIds)
     {
-        if (!context.ApplyCommand(id))
-        {
-            yield return "fail";
-            yield break;
-        }
-
-        yield return context.Commands[id].Responses[context.Temperature];
+        context.Add(new CommandFact(id));
     }
+    context.Add(new InputEndsFact());
 
-    if (!context.AppliedCommands.Contains(7))
+    var set = context.Execute();
+    foreach (var fact in set)
     {
-        yield return "fail";
-        yield break;
+        if (GetResponse(fact, temperature) is string response)
+        {
+            yield return response;
+        }
     }
+}
+
+static string? GetResponse(IFact fact, TemperatureType temperature)
+{
+    return fact switch
+    {
+        WearClothingFact clothingFact => clothingFact.Type switch
+        {
+            ClothingType.Footwear when temperature == TemperatureType.Hot => "sandals",
+            ClothingType.Footwear when temperature == TemperatureType.Cold => "boots",
+            ClothingType.Headwear when temperature == TemperatureType.Hot => "sunglasses",
+            ClothingType.Headwear when temperature == TemperatureType.Cold => "hat",
+            ClothingType.Socks => "socks",
+            ClothingType.Shirt => "shirt",
+            ClothingType.Jacket => "jacket",
+            ClothingType.Pants when temperature == TemperatureType.Hot => "shorts",
+            ClothingType.Pants when temperature == TemperatureType.Cold => "pants",
+            _ => null,
+        },
+        LeftHouseFact => "leaving house",
+        RemovedPJFact => "Removing PJs",
+        FailedFact => "fail",
+        _ => null,
+    };
 }

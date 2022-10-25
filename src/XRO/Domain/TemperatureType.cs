@@ -1,4 +1,4 @@
-﻿namespace XRO;
+﻿namespace XRO.Domain;
 
 public enum TemperatureType
 {
