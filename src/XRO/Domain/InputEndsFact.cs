@@ -1,5 +1,5 @@
 ﻿namespace XRO.Domain;
 
-public class InputEndsFact : IFact
+public class InputEndsFact : BaseSingletonFact<InputEndsFact>
 {
 }

@@ -41,7 +41,7 @@ public class RulesContext : IRulesContext
             set = action(set);
             foreach (var rule in _rules)
             {
-                var result = rule.Matches(set);
+                var result = rule.Match(set);
                 if (result.IsMatched)
                 {
                     rule.Execute(this, result);

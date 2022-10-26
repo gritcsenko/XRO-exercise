@@ -1,8 +1,5 @@
 ﻿namespace XRO.Domain;
 
-public class FailedFact : IFact
+public class FailedFact : BaseSingletonFact<FailedFact>
 {
-    public override bool Equals(object? obj) => obj is FailedFact;
-
-    public override int GetHashCode() => GetType().GetHashCode();
 }

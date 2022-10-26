@@ -8,7 +8,7 @@ public class NoClothingWhenHotRule : BaseFailRule
 
     public NoClothingWhenHotRule(ClothingType type) => _type = type;
 
-    public override bool Matches(IReadOnlyFactsSet set)
+    public override bool IsMatches(IReadOnlyFactsSet set)
     {
         var temperature = set.GetFacts<TemperatureFact>().SingleOrDefault();
         return temperature?.Type switch

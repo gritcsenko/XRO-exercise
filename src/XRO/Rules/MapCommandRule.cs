@@ -1,9 +1,10 @@
 ﻿using XRO.Domain;
 
 namespace XRO.Rules;
+
 public class MapCommandRule : BaseRule
 {
-    public override (bool, IEnumerable<IFact> facts) MatchesCore(IReadOnlyFactsSet set) => (set.GetFacts<CommandFact>().Any(), set);
+    public override (bool, IEnumerable<IFact> facts) MatchCore(IReadOnlyFactsSet set) => (set.GetFacts<CommandFact>().Any(), set);
 
     public override void Execute(IRulesContext context, IRuleMatchResult match)
     {

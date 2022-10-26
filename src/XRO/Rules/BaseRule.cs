@@ -6,25 +6,11 @@ public abstract class BaseRule : IRule
 {
     public abstract void Execute(IRulesContext context, IRuleMatchResult match);
 
-    public IRuleMatchResult Matches(IReadOnlyFactsSet set)
+    public IRuleMatchResult Match(IReadOnlyFactsSet set)
     {
-        var (isMatched, facts) = MatchesCore(set);
-        return new RuleMatchResult(this, isMatched, facts);
+        var (isMatched, facts) = MatchCore(set);
+        return new RuleMatchResult(this, isMatched, new FactsSet(facts));
     }
 
-    public abstract (bool, IEnumerable<IFact> facts) MatchesCore(IReadOnlyFactsSet set);
-
-    private class RuleMatchResult : IRuleMatchResult
-    {
-        public RuleMatchResult(IRule rule, bool isMatched, IEnumerable<IFact> facts)
-        {
-            Rule = rule;
-            IsMatched = isMatched;
-            Set = new FactsSet(facts);
-        }
-
-        public IRule Rule { get; }
-        public bool IsMatched { get; }
-        public IReadOnlyFactsSet Set { get; }
-    }
+    public abstract (bool, IEnumerable<IFact> facts) MatchCore(IReadOnlyFactsSet set);
 }

@@ -10,7 +10,7 @@ public class PutOnBeforeRule : BaseFailRule
     public PutOnBeforeRule(ClothingType putOnId, ClothingType beforeId) =>
         (_putOn, _before) = (putOnId, beforeId);
 
-    public override bool Matches(IReadOnlyFactsSet set)
+    public override bool IsMatches(IReadOnlyFactsSet set)
     {
         var wearing = set.GetFacts<WearClothingFact>().Select(f => f.Type);
 
