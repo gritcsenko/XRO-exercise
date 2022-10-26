@@ -3,12 +3,7 @@
 namespace XRO.Rules;
 public class MapCommandRule : BaseRule
 {
-    public override (bool, IEnumerable<IFact> facts) MatchesCore(IReadOnlyFactsSet set)
-    {
-        var command = set.GetFacts<CommandFact>().LastOrDefault();
-        var temperature = set.GetFacts<TemperatureFact>().SingleOrDefault();
-        return (command is not null && temperature is not null, set);
-    }
+    public override (bool, IEnumerable<IFact> facts) MatchesCore(IReadOnlyFactsSet set) => (set.GetFacts<CommandFact>().Any(), set);
 
     public override void Execute(IRulesContext context, IRuleMatchResult match)
     {
