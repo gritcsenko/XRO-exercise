@@ -8,11 +8,11 @@ public interface IRulesContext
 
     void Add(IFact fact);
 
-    void AddAll(IReadOnlyCollection<IFact> set);
+    void AddAll(IEnumerable<IFact> set);
 
     void Remove(IFact fact);
 
-    void RemoveAll(IReadOnlyCollection<IFact> set);
+    void RemoveAll(IEnumerable<IFact> set);
 
     void Halt();
 

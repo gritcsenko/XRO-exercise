@@ -1,4 +1,5 @@
-﻿using XRO.Domain;
+﻿using System.Diagnostics.CodeAnalysis;
+using XRO.Domain;
 
 namespace XRO.Rules;
 
@@ -14,11 +15,19 @@ public class RulesContext : IRulesContext
 
     public void Add(IFact fact) => AddAll(new[] { fact });
 
-    public void AddAll(IReadOnlyCollection<IFact> set) => _actions.Add(facts => new(facts.Facts.Concat(set)));
+    public void AddAll(IEnumerable<IFact> set)
+    {
+        var buffer = set.ToArray();
+        _actions.Add(facts => new(facts.Facts.Concat(buffer)));
+    }
 
     public void Remove(IFact fact) => RemoveAll(new[] { fact });
 
-    public void RemoveAll(IReadOnlyCollection<IFact> set) => _actions.Add(facts => new(facts.Facts.Except(set)));
+    public void RemoveAll(IEnumerable<IFact> set)
+    {
+        var buffer = set.ToArray();
+        _actions.Add(facts => new(facts.Facts.Except(buffer, FactRemoveEqualityComparer.Instance)));
+    }
 
     public IReadOnlyFactsSet Execute()
     {
@@ -57,5 +66,14 @@ public class RulesContext : IRulesContext
     public void Halt()
     {
         _isHalted = true;
+    }
+
+    private class FactRemoveEqualityComparer : IEqualityComparer<IFact>
+    {
+        public static IEqualityComparer<IFact> Instance { get; } = new FactRemoveEqualityComparer();
+
+        public bool Equals(IFact? x, IFact? y) => ReferenceEquals(x, y);
+
+        public int GetHashCode([DisallowNull] IFact obj) => obj.GetHashCode();
     }
 }
